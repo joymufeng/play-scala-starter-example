@@ -1,57 +1,53 @@
-[<img src="https://img.shields.io/travis/playframework/play-scala-starter-example.svg"/>](https://travis-ci.org/playframework/play-scala-starter-example)
+## The action constructed from an ActionRefiner instance doesn't work in develop mode.
+[#7614](https://github.com/playframework/playframework/issues/7614)
 
-# play-scala-starter-example
+### Play Version: 2.6.1
+### API: Scala
+### Operating System: Windows 10
+### JDK: Oracle 1.8.0_111
+java version "1.8.0_111"
+Java(TM) SE Runtime Environment (build 1.8.0_111-b14)
+Java HotSpot(TM) 64-Bit Server VM (build 25.111-b14, mixed mode)
+Paste the output from `java -version` at the command line.
 
-This is a starter application that shows how Play works.  Please see the documentation at https://www.playframework.com/documentation/latest/Home for more details.
+### Expected Behavior
+`HomeController.index` should works normally in dev mode while constructed from an ActionRefiner instance.
 
-## Running
+### Actual Behavior
+#### Dev Mode
+After sereral successful requests to http://localhost:9000/,  the later requests will be blocked.
 
-Run this using [sbt](http://www.scala-sbt.org/).  If you downloaded this project from http://www.playframework.com/download then you'll find a prepackaged version of sbt in the project directory:
+#### Prod Mode
+It works normally.
 
+#### Code
+The `index` action doesn't work in dev mode:
 ```
-sbt run
+import javax.inject._
+import akka.stream.Materializer
+import play.api.mvc._
+import scala.concurrent.{ExecutionContext, Future}
+
+@Singleton
+class HomeController @Inject()(cc: ControllerComponents)(implicit ec: ExecutionContext, mat: Materializer) extends AbstractController(cc) {
+  val userAction = new UserAction(new BodyParsers.Default())
+
+  class UserRequest[A](val user: String, request: Request[A]) extends WrappedRequest[A](request)
+  class UserAction @Inject()(val parser: BodyParsers.Default)(implicit val ec: ExecutionContext) extends ActionBuilder[UserRequest, AnyContent] with ActionRefiner[Request, UserRequest] {
+    def executionContext = ec
+    def refine[A](input: Request[A]) = {
+      println("refine ...")
+      Future.successful(Left(Results.Ok("Left result.")))
+    }
+  }
+
+  def index = userAction { implicit request: Request[AnyContent] =>
+    Ok("ok")
+  }
+}
 ```
 
-And then go to http://localhost:9000 to see the running web application.
+### Reproducible Test Case
+This demo project will reproduce this issue:
+https://github.com/joymufeng/play-scala-starter-example
 
-There are several demonstration files available in this template.
-
-## Controllers
-
-- HomeController.scala:
-
-  Shows how to handle simple HTTP requests.
-
-- AsyncController.scala:
-
-  Shows how to do asynchronous programming when handling a request.
-
-- CountController.scala:
-
-  Shows how to inject a component into a controller and use the component when
-  handling requests.
-
-## Components
-
-- Module.scala:
-
-  Shows how to use Guice to bind all the components needed by your application.
-
-- Counter.scala:
-
-  An example of a component that contains state, in this case a simple counter.
-
-- ApplicationTimer.scala:
-
-  An example of a component that starts when the application starts and stops
-  when the application stops.
-
-## Filters
-
-- Filters.scala:
-
-  Creates the list of HTTP filters used by your application.
-
-- ExampleFilter.scala
-
-  A simple filter that adds a header to every response.
