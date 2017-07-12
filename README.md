@@ -1,5 +1,4 @@
-## The action constructed from an ActionRefiner instance doesn't work in develop mode.
-[#7614](https://github.com/playframework/playframework/issues/7614)
+## The action constructed from an ActionRefiner instance doesn't work in develop mode. [#7614](https://github.com/playframework/playframework/issues/7614)
 
 ### Play Version: 2.6.1
 ### API: Scala
